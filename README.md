@@ -1,0 +1,3 @@
+# scratch-content
+
+Scratchの自分のプロジェクトとScratchから自分のプロジェクトを取得してGithubで管理するためのpythonスクリプト。
