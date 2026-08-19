@@ -10,5 +10,8 @@ PUSHボタンかスペースキー
 
 ずっと前にY◯utubeShortsで見たやつ
 
-環境に完全に左右されるので重すぎたら
+環境に完全に左右されるので重すぎたら↓
 https://turbowarp.org/1369553199/fullscreen?hqpen
+
+動作してる様子のYouTube↓
+https://scratch.mit.edu/discuss/youtube/jtfGrS-6RpA
