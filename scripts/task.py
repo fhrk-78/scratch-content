@@ -54,6 +54,11 @@ if __name__ == '__main__':
       with open(lastupdatetxt, 'r', encoding='utf-8') as f:
         lastupdate = int(f.read())
 
+    modified = datetime.fromisoformat(project['history']['modified']).timestamp()
+    if lastupdate == modified:
+      print(f'{target['id']} is up to date')
+      continue
+
     # write README.md
     download(project['image'], pjroot/'thumbnail.png')
     with open(pjroot/'README.md', 'w', encoding='utf-8') as f:
@@ -66,11 +71,6 @@ if __name__ == '__main__':
         project['description'],
         '\n'
       ])
-
-    modified = datetime.fromisoformat(project['history']['modified']).timestamp()
-    if lastupdate == modified:
-      print(f'{target['id']} is up to date')
-      continue
 
     # directory setup
     pjUnzipped = pjroot/'unzipped'
