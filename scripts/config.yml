@@ -1,4 +1,3 @@
 username: fhrk_7
-include:
-  - id: 1367982550
-    dir: simple-string-library
+exclude:
+  - 1369313076

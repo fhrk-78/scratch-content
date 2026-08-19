@@ -7,6 +7,8 @@ import zipfile
 from datetime import datetime
 import math
 
+VERSION_DETECT_REGEX = r'(v[0-9]+(?:\.[0-9]+)*)'
+
 def download(url: str, filename: Path) -> None:
   content = requests.get(url).content
   with open(filename, mode='wb') as f:
@@ -18,6 +20,9 @@ def zip(sourceDir: Path, filename: Path) -> None:
       if path.is_file():
         zipf.write(path, arcname=path.name)
 
+def filename_nize(s: str) -> str:
+  return re.sub(r'[ \\/:\*\?"<>\|]', '_', s.strip())
+
 if __name__ == '__main__':
   rootdir = Path(os.environ.get("GITHUB_WORKSPACE", os.getcwd()))
 
@@ -25,11 +30,22 @@ if __name__ == '__main__':
   with open(rootdir/'scripts'/'config.yml', 'r', encoding='utf-8') as f:
     config = yaml.safe_load(f)
 
-  for target in config['include']:
+  projects = requests.get(f'https://api.scratch.mit.edu/users/{config['username']}/projects').json()
+
+  for target in projects:
+    # exclude check
+    if target['id'] in config['exclude']:
+      continue
+
     # get meta
     project = requests.get(f'https://api.scratch.mit.edu/projects/{str(target['id'])}/').json()
-    version = re.findall(r'(v[0-9]+(?:\.[0-9]+)*)', project['title'])
-    pjroot = rootdir/'projects'/str(target['dir'])
+    version = re.findall(VERSION_DETECT_REGEX, project['title'])
+    
+    if len(version) == 0:
+      pjroot = rootdir/'projects'/filename_nize(project['title'])
+    else:
+      pjroot = rootdir/'projects'/filename_nize(re.sub(VERSION_DETECT_REGEX, '', str(project['title'])))
+    pjroot.mkdir(parents=True, exist_ok=True)
 
     # get lastupdate
     lastupdatetxt = pjroot/'lastupdate.txt'
@@ -37,15 +53,6 @@ if __name__ == '__main__':
     if lastupdatetxt.exists():
       with open(lastupdatetxt, 'r', encoding='utf-8') as f:
         lastupdate = int(f.read())
-
-    modified = datetime.fromisoformat(project['history']['modified']).timestamp()
-    if lastupdate == modified:
-      print(f'{target['id']} is up to date')
-      continue
-
-    # directory setup
-    pjUnzipped = pjroot/'unzipped'
-    pjUnzipped.mkdir(parents=True, exist_ok=True)
 
     # write README.md
     download(project['image'], pjroot/'thumbnail.png')
@@ -59,6 +66,15 @@ if __name__ == '__main__':
         project['description'],
         '\n'
       ])
+
+    modified = datetime.fromisoformat(project['history']['modified']).timestamp()
+    if lastupdate == modified:
+      print(f'{target['id']} is up to date')
+      continue
+
+    # directory setup
+    pjUnzipped = pjroot/'unzipped'
+    pjUnzipped.mkdir(exist_ok=True)
 
     # download body
     token = project['project_token']
@@ -80,7 +96,7 @@ if __name__ == '__main__':
 
     # zip project
     if len(version) == 0:
-      zip(pjUnzipped, 'latest.sb3')
+      zip(pjUnzipped, pjroot/'latest.sb3')
     else:
       pjTags = pjroot/'tags'
       pjTags.mkdir(exist_ok=True)
